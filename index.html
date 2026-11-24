@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>EasyDay – tip, sales tax, gas cost, paycheck and unit converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f1f4f9;--ink:#14213d;--card:#fff;--line:#d3dbe8;--acc:#1b5fd1;--accink:#fff;--mute:#5a6785;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1526;--ink:#eef2f7;--card:#18223b;--line:#2b3858;--acc:#5b9bff;--accink:#0e1526;--mute:#9aa7c4}}
+:root[data-theme="dark"]{--bg:#0e1526;--ink:#eef2f7;--card:#18223b;--line:#2b3858;--acc:#5b9bff;--accink:#0e1526;--mute:#9aa7c4}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
+main{max-width:480px;margin:0 auto;padding:16px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+h1{font-size:26px;font-weight:800;margin:0 0 12px;letter-spacing:-.02em}
+.tabs{display:flex;gap:4px;background:var(--line);padding:4px;border-radius:14px;margin-bottom:16px}
+.tab{flex:1;font:inherit;font-weight:700;font-size:14px;border:0;border-radius:11px;padding:11px 2px;background:transparent;color:var(--ink);cursor:pointer}
+.tab[aria-selected="true"]{background:var(--card)}
+label{display:block;font-weight:700;font-size:14px;color:var(--mute);margin:14px 0 6px}
+input,select{width:100%;font:inherit;font-weight:700;font-size:20px;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:12px;padding:12px 14px}
+input:focus-visible,select:focus-visible,.chip:focus-visible,.tab:focus-visible,.step:focus-visible,.btn:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.row{display:flex;gap:10px}.row>*{flex:1;min-width:0}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font:inherit;font-weight:700;font-size:16px;border:2px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:9px 16px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--acc);border-color:var(--acc);color:var(--accink)}
+.people{display:flex;align-items:center;gap:12px}
+.step{width:48px;height:48px;font:inherit;font-size:24px;font-weight:800;border-radius:12px;border:2px solid var(--line);background:var(--card);color:var(--ink);cursor:pointer}
+.people b{font-size:24px;min-width:28px;text-align:center}
+.res{margin-top:20px;background:var(--ink);color:var(--bg);border-radius:18px;padding:18px}
+.res .big{font-size:44px;font-weight:800;line-height:1.05}
+.res .sub{font-size:15px;opacity:.8}
+.line{display:flex;justify-content:space-between;font-weight:700;margin-top:12px;font-size:17px}
+.btn{font:inherit;font-weight:800;font-size:16px;border:0;border-radius:12px;padding:12px;width:100%;margin-top:14px;background:var(--acc);color:var(--accink);cursor:pointer}
+.hide{display:none}
+.note{color:var(--mute);font-size:13px;margin-top:14px;line-height:1.4}
+#adbar{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:1px solid var(--line);padding:6px 0 calc(6px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;z-index:10}
+#ad-slot{width:320px;height:50px;max-width:100%;display:flex;align-items:center;justify-content:center;border:1px dashed var(--line);border-radius:6px;color:var(--mute);font-size:12px;font-weight:700;overflow:hidden}
+</style>
+</head>
+<body>
+<main>
+<h1>EasyDay</h1>
+<div class="tabs" role="tablist">
+<button class="tab" role="tab" data-t="tip" aria-selected="true">Tip</button>
+<button class="tab" role="tab" data-t="deal" aria-selected="false">Tax</button>
+<button class="tab" role="tab" data-t="gas" aria-selected="false">Gas</button>
+<button class="tab" role="tab" data-t="pay" aria-selected="false">Pay</button>
+<button class="tab" role="tab" data-t="conv" aria-selected="false">Convert</button>
+</div>
+
+<section id="tip">
+<div class="row">
+<div><label for="bill">Subtotal ($)</label><input id="bill" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div>
+<div><label for="btax">Tax ($, optional)</label><input id="btax" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"></div>
+</div>
+<label>Tip (on subtotal)</label>
+<div class="chips" id="tips"></div>
+<label for="ctip" class="hide" id="ctl">Custom tip (%)</label>
+<input id="ctip" class="hide" type="number" inputmode="decimal" min="0" placeholder="e.g. 22">
+<label>Split between</label>
+<div class="people"><button class="step" id="minus" aria-label="Fewer people">−</button><b id="ppl">1</b><button class="step" id="plus" aria-label="More people">+</button></div>
+<div class="chips" style="margin-top:12px"><button class="chip" id="rnd" aria-pressed="false">Round up each share</button></div>
+<div class="res">
+<div class="sub">Each person pays</div><div class="big" id="each">$0.00</div>
+<div class="line"><span>Tip</span><span id="tipamt">$0.00</span></div>
+<div class="line"><span>Total</span><span id="tot">$0.00</span></div>
+</div>
+</section>
+
+<section id="deal" class="hide">
+<label for="price">Price ($)</label>
+<input id="price" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00">
+<div class="row">
+<div><label for="disc">Discount (%)</label><input id="disc" type="number" inputmode="decimal" min="0" placeholder="0"></div>
+<div><label for="off">Or $ off</label><input id="off" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"></div>
+</div>
+<label for="st">State</label>
+<select id="st"></select>
+<label for="loc">Local tax rate (%) added on top</label>
+<input id="loc" type="number" inputmode="decimal" min="0" step="0.001" placeholder="0">
+<div class="res">
+<div class="sub">You pay</div><div class="big" id="final">$0.00</div>
+<div class="line"><span>You save</span><span id="save">$0.00</span></div>
+<div class="line"><span>Tax (<span id="rate">0</span>%)</span><span id="taxamt">$0.00</span></div>
+</div>
+<p class="note">State rates are the statewide base rate (California includes its mandatory 1.25% local part). City and county taxes vary, so enter your local rate above. Rates change. Check your state revenue department for exact figures. Some items, like groceries or clothing, may be exempt.</p>
+</section>
+
+<section id="gas" class="hide">
+<div class="row">
+<div><label for="mi">Distance (miles)</label><input id="mi" type="number" inputmode="decimal" min="0" placeholder="0"></div>
+<div><label for="mpg">Car MPG</label><input id="mpg" type="number" inputmode="decimal" min="0" placeholder="28"></div>
+</div>
+<label for="gp">Gas price ($/gallon)</label>
+<input id="gp" type="number" inputmode="decimal" min="0" step="0.01" placeholder="3.25">
+<div class="chips" style="margin-top:12px"><button class="chip" id="rt" aria-pressed="false">Round trip</button></div>
+<label for="gpp">Split between</label>
+<input id="gpp" type="number" inputmode="numeric" min="1" value="1">
+<div class="res">
+<div class="sub">Trip gas cost</div><div class="big" id="gcost">$0.00</div>
+<div class="line"><span>Gallons needed</span><span id="ggal">0</span></div>
+<div class="line"><span>Per person</span><span id="gper">$0.00</span></div>
+</div>
+</section>
+
+<section id="pay" class="hide">
+<div class="row">
+<div><label for="amt">Amount ($)</label><input id="amt" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0"></div>
+<div><label for="per">Per</label><select id="per"><option value="h">Hour</option><option value="y">Year</option></select></div>
+</div>
+<label for="hrs">Hours per week</label>
+<input id="hrs" type="number" inputmode="decimal" min="1" max="168" value="40">
+<div class="res">
+<div class="sub">Hourly</div><div class="big" id="p-h">$0.00</div>
+<div class="line"><span>Weekly</span><span id="p-w">$0.00</span></div>
+<div class="line"><span>Every 2 weeks</span><span id="p-b">$0.00</span></div>
+<div class="line"><span>Twice a month</span><span id="p-s">$0.00</span></div>
+<div class="line"><span>Monthly</span><span id="p-m">$0.00</span></div>
+<div class="line"><span>Yearly</span><span id="p-y">$0.00</span></div>
+</div>
+<p class="note">Gross pay before taxes, based on 52 weeks a year.</p>
+</section>
+
+<section id="conv" class="hide">
+<label for="cat">Type</label>
+<select id="cat"></select>
+<label for="val">Amount</label>
+<input id="val" type="number" inputmode="decimal" placeholder="0" value="1">
+<div class="row">
+<div><label for="from">From</label><select id="from"></select></div>
+<div><label for="to">To</label><select id="to"></select></div>
+</div>
+<div class="res"><div class="sub" id="cl"></div><div class="big" id="cr">0</div></div>
+</section>
+</main>
+
+<div id="adbar"><div id="ad-slot">Ad 320×50</div></div>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var KEY='easyday-v2';
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{}}catch(e){return {}}}
+var S=load();
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+var money=function(n){return '$'+(isFinite(n)?n:0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})};
+var num=function(id){var v=parseFloat($(id).value);return isFinite(v)&&v>0?v:0};
+var TABS=['tip','deal','gas','pay','conv'];
+[].forEach.call(document.querySelectorAll('.tab'),function(b){b.onclick=function(){
+ [].forEach.call(document.querySelectorAll('.tab'),function(x){x.setAttribute('aria-selected',x===b)});
+ TABS.forEach(function(t){$(t).classList.toggle('hide',t!==b.dataset.t)});
+}});
+
+/* TIP */
+var tipPct=S.tip!==undefined?S.tip:18,people=1,custom=false,round=false;
+var opts=[15,18,20,25,'Other'];
+function drawTips(){
+ $('tips').innerHTML='';
+ opts.forEach(function(o){
+  var b=document.createElement('button');b.className='chip';
+  var sel=o==='Other'?custom:(!custom&&o===tipPct);
+  b.setAttribute('aria-pressed',sel);b.textContent=o==='Other'?'Other':o+'%';
+  b.onclick=function(){
+   if(o==='Other'){custom=true;$('ctip').classList.remove('hide');$('ctl').classList.remove('hide');$('ctip').focus()}
+   else{custom=false;tipPct=o;$('ctip').classList.add('hide');$('ctl').classList.add('hide');S.tip=o;save()}
+   drawTips();calcTip();
+  };
+  $('tips').appendChild(b);
+ });
+}
+function calcTip(){
+ var sub=num('bill'),tax=num('btax'),p=custom?num('ctip'):tipPct;
+ var tip=sub*p/100,tot=sub+tax+tip,each=tot/people;
+ if(round){each=Math.ceil(each-1e-9);tot=each*people;tip=tot-sub-tax}
+ $('tipamt').textContent=money(tip);$('tot').textContent=money(tot);$('each').textContent=money(each);
+}
+['bill','btax','ctip'].forEach(function(i){$(i).oninput=calcTip});
+$('minus').onclick=function(){people=Math.max(1,people-1);$('ppl').textContent=people;calcTip()};
+$('plus').onclick=function(){people=Math.min(50,people+1);$('ppl').textContent=people;calcTip()};
+$('rnd').onclick=function(){round=!round;this.setAttribute('aria-pressed',round);calcTip()};
+drawTips();calcTip();
+
+/* TAX */
+var ST={"Alabama":4,"Alaska":0,"Arizona":5.6,"Arkansas":6.5,"California":7.25,"Colorado":2.9,"Connecticut":6.35,"Delaware":0,"District of Columbia":6,"Florida":6,"Georgia":4,"Hawaii":4,"Idaho":6,"Illinois":6.25,"Indiana":7,"Iowa":6,"Kansas":6.5,"Kentucky":6,"Louisiana":5,"Maine":5.5,"Maryland":6,"Massachusetts":6.25,"Michigan":6,"Minnesota":6.875,"Mississippi":7,"Missouri":4.225,"Montana":0,"Nebraska":5.5,"Nevada":6.85,"New Hampshire":0,"New Jersey":6.625,"New Mexico":4.875,"New York":4,"North Carolina":4.75,"North Dakota":5,"Ohio":5.75,"Oklahoma":4.5,"Oregon":0,"Pennsylvania":6,"Rhode Island":7,"South Carolina":6,"South Dakota":4.2,"Tennessee":7,"Texas":6.25,"Utah":6.1,"Vermont":6,"Virginia":5.3,"Washington":6.5,"West Virginia":6,"Wisconsin":5,"Wyoming":4};
+$('st').innerHTML='<option value="">Choose your state</option>'+Object.keys(ST).map(function(k){return '<option>'+k+'</option>'}).join('');
+if(S.st&&ST[S.st]!==undefined)$('st').value=S.st;
+if(S.loc!==undefined)$('loc').value=S.loc;
+function calcDeal(){
+ var p=num('price'),d=Math.min(100,num('disc')),o=num('off');
+ var after=Math.max(0,p*(1-d/100)-o),r=(ST[$('st').value]||0)+num('loc'),tax=after*r/100;
+ $('final').textContent=money(after+tax);$('save').textContent=money(p-after);$('taxamt').textContent=money(tax);
+ $('rate').textContent=(Math.round(r*1000)/1000);
+ S.st=$('st').value;S.loc=$('loc').value;save();
+}
+['price','disc','off','loc'].forEach(function(i){$(i).oninput=calcDeal});$('st').onchange=calcDeal;calcDeal();
+
+/* GAS */
+if(S.mpg)$('mpg').value=S.mpg;if(S.gp)$('gp').value=S.gp;
+var rt=false;
+$('rt').onclick=function(){rt=!rt;this.setAttribute('aria-pressed',rt);calcGas()};
+function calcGas(){
+ var mi=num('mi')*(rt?2:1),mpg=num('mpg'),gp=num('gp'),n=Math.max(1,Math.floor(num('gpp'))||1);
+ var gal=mpg?mi/mpg:0,cost=gal*gp;
+ $('ggal').textContent=(Math.round(gal*10)/10)+' gal';$('gcost').textContent=money(cost);$('gper').textContent=money(cost/n);
+ S.mpg=$('mpg').value;S.gp=$('gp').value;save();
+}
+['mi','mpg','gp','gpp'].forEach(function(i){$(i).oninput=calcGas});calcGas();
+
+/* PAY */
+function calcPay(){
+ var a=num('amt'),h=num('hrs')||40,yr=$('per').value==='y'?a:a*h*52,hr=yr/(h*52);
+ $('p-h').textContent=money(hr);$('p-w').textContent=money(yr/52);$('p-b').textContent=money(yr/26);
+ $('p-s').textContent=money(yr/24);$('p-m').textContent=money(yr/12);$('p-y').textContent=money(yr);
+}
+['amt','hrs'].forEach(function(i){$(i).oninput=calcPay});$('per').onchange=calcPay;calcPay();
+
+/* CONVERT */
+var U={
+ 'Temperature':{'°F':null,'°C':null},
+ 'Length':{'miles':1609.344,'km':1000,'feet':0.3048,'inches':0.0254,'meters':1,'cm':0.01},
+ 'Weight':{'pounds':0.45359237,'ounces':0.028349523,'kg':1,'grams':0.001},
+ 'Liquid':{'gallons':3.785411784,'quarts':0.946352946,'cups':0.2365882365,'fl oz':0.0295735296,'liters':1,'mL':0.001},
+ 'Cooking':{'cups':236.5882365,'tbsp':14.78676478,'tsp':4.928921594,'mL':1}
+};
+$('cat').innerHTML=Object.keys(U).map(function(c){return '<option>'+c+'</option>'}).join('');
+function fill(){
+ var ks=Object.keys(U[$('cat').value]),h=ks.map(function(k){return '<option>'+k+'</option>'}).join('');
+ $('from').innerHTML=h;$('to').innerHTML=h;$('to').selectedIndex=1;
+ $('val').value=$('cat').value==='Temperature'?72:1;calcConv();
+}
+function calcConv(){
+ var c=$('cat').value,v=parseFloat($('val').value),f=$('from').value,t=$('to').value,out;
+ if(!isFinite(v)){$('cr').textContent='–';$('cl').textContent='';return}
+ if(c==='Temperature'){var cel=f==='°F'?(v-32)*5/9:v;out=t==='°F'?cel*9/5+32:cel}
+ else out=v*U[c][f]/U[c][t];
+ $('cl').textContent=v+' '+f+' =';
+ $('cr').textContent=(Math.round(out*1000)/1000).toLocaleString('en-US')+' '+t;
+}
+$('cat').onchange=fill;
+['val','from','to'].forEach(function(i){$(i).oninput=calcConv;$(i).onchange=calcConv});
+fill();
+})();
+</script>
+</body>
+</html>
